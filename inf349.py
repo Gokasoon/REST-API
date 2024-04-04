@@ -24,6 +24,8 @@ def init_db():
 
     db.connect()
     db.create_tables([Product, OrderItem, CreditCard, ShippingInformation, Order, Transaction], safe=True)
+    OrderOrderItemThrough = OrderItem.orders.get_through_model()
+    OrderOrderItemThrough.create_table()
     db.close()
     
 
@@ -37,40 +39,49 @@ def get_products():
 def post_order():
     data = request.get_json()
 
-    if 'product' not in data:
-        return jsonify({'errors': {'product': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
+    total_price = 0
+    total_weight = 0
 
-    product_data = data['product']
+    if 'products' not in data:
+        return jsonify({'errors': {'products': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
 
-    if 'id' not in product_data or 'quantity' not in product_data:
-        return jsonify({'errors': {'product': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
+    product_data = data['products']
+    order_items  = []
 
-    product_id = product_data['id']
-    quantity = product_data['quantity']
-
-    if quantity < 1:
-        return jsonify({'errors': {'product': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
-
-    product = Product.get_or_none(id=product_id)
-
-    if product is None or not product.in_stock:
-        return jsonify({'errors': {'product': {'code': 'out-of-inventory', 'name': 'Le produit demandé n\'est pas en inventaire'}}}), 422
-
-    total_price = product.price * quantity
-    total_weight = product.weight * quantity
+    for product_data in product_data:
     
+        if 'id' not in product_data or 'quantity' not in product_data:
+            return jsonify({'errors': {'products': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
+
+        product_id = product_data['id']
+        quantity = product_data['quantity']
+
+        if quantity < 1:
+            return jsonify({'errors': {'products': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
+
+        product = Product.get_or_none(id=product_id)
+
+        if product is None or not product.in_stock:
+            return jsonify({'errors': {'products': {'code': 'out-of-inventory', 'name': 'Le produit demandé n\'est pas en inventaire'}}}), 422
+
+        total_price += product.price * quantity
+        total_weight += product.weight * quantity
+
+        order_item = OrderItem.create(product=product, quantity=quantity) 
+        order_items.append(order_item)
+
     if total_weight < 0.5 :
         shipping_price = 5
     elif total_weight < 2 :
         shipping_price = 10
     else :
         shipping_price = 25
+    
+    for order_item in order_items:
+        order_item.save()
 
-    total_price = quantity * product.price
-
-    order_item = OrderItem.create(id=product.id, quantity=quantity) 
-    order_item.save()
-    order = Order.create(total_price=total_price, product=order_item.id_OrderItem, shipping_price=shipping_price, paid=False, email=None, credit_card=None, shipping_information=None)
+    order = Order.create(total_price=total_price, shipping_price=shipping_price, paid=False, email=None, credit_card=None, shipping_information=None)
+    order.order_items.add(order_items)
 
     return redirect(url_for('get_order', order_id=order.id), code=302)
 

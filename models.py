@@ -32,19 +32,6 @@ class Product(BaseModel):
         }
        
 
-class OrderItem(BaseModel):
-    id_OrderItem = IntegerField(primary_key=True)
-    id = ForeignKeyField(Product, backref='order_items', column_name='id')  
-    quantity = IntegerField()
-
-    def to_dict(self):
-        return {
-            'id': self.id.id,
-            'quantity': self.quantity
-        }
-    
-
-
 class CreditCard(BaseModel):
     name = CharField()
     number = CharField()
@@ -89,19 +76,31 @@ class ShippingInformation(BaseModel):
             'city': self.city,
             'province': self.province
         }
+    
+
+class OrderItem(BaseModel):
+    product = ForeignKeyField(Product, backref='order_items')  
+    quantity = IntegerField()
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'product': self.product.id,
+            'quantity': self.quantity
+        }
         
 
 
 class Order(BaseModel):
-    id = IntegerField(primary_key=True)
+    id = AutoField(primary_key=True)
     total_price = FloatField()
     email = CharField(null=True)
     credit_card = ForeignKeyField(CreditCard, backref='orders', null=True)
     shipping_information = ForeignKeyField(ShippingInformation, backref='orders', null=True)
     paid = BooleanField()
     transaction = ForeignKeyField(Transaction, backref='orders', null=True)
-    product = ForeignKeyField(OrderItem, backref='orders')
     shipping_price = IntegerField()
+    order_items = ManyToManyField(OrderItem, backref='orders')
 
     def to_dict(self):
         return {
@@ -112,8 +111,8 @@ class Order(BaseModel):
             'shipping_information': self.shipping_information.to_dict() if self.shipping_information is not None else {},
             'transaction': self.transaction.to_dict() if self.transaction is not None else {},
             'paid': self.paid,
-            'product': self.product.to_dict() if self.product is not None else None,  
-            'shipping_price': self.shipping_price
+            'shipping_price': self.shipping_price,
+            'products': [orderItem.to_dict() for orderItem in self.order_items]
         }
 
 
