@@ -7,20 +7,15 @@ import sys
 
 app = Flask(__name__)
 
-if os.environ.get('FLASK_ENV') == 'test':
-    app.config['TESTING'] = True
-    app.config['DATABASE'] = 'test_database.sqlite3'
-else:
-    app.config['DATABASE'] = 'db.sqlite3'
-
 @app.cli.command()
 def init_db():
-    db = SqliteDatabase(app.config['DATABASE'])
-
-    if not os.path.exists(app.config['DATABASE']):
-        with open(app.config['DATABASE'], 'w'):
-            print('Database file created')
-            pass
+    db = PostgresqlDatabase(
+        database="API_REST",
+        user="postgres",
+        password="toto",
+        host="localhost",
+        port=5432
+    )
 
     db.connect()
     db.create_tables([Product, OrderItem, CreditCard, ShippingInformation, Order, Transaction], safe=True)
@@ -154,19 +149,23 @@ def put_order(order_id):
 
 if len(sys.argv) > 1 and sys.argv[1] != 'init-db':
 
-    print('TESTING : ', app.testing)
-    print('DATABASE : ', app.config['DATABASE'])
-
-    db = SqliteDatabase(app.config['DATABASE'])
+    db = PostgresqlDatabase(
+        database="API_REST",
+        user="postgres",
+        password="toto",
+        host="localhost",
+        port=5432
+    )
     db.connect()
 
     response = requests.get('http://dimprojetu.uqac.ca/~jgnault/shops/products/')
     products = response.json()
     products = products['products']
-    # print(products)
 
     for product in products:
         if Product.get_or_none(id=product['id']) is None:
+            if "\x00" in product["description"]:
+                product["description"] = product["description"].replace("\x00", "")
             Product.create(id=product['id'], name=product['name'], type=product['type'], description=product['description'], image=product['image'], price=product['price'], weight=product['weight'], height=product['height'], in_stock=product['in_stock'])
 
     app.run(debug=True)

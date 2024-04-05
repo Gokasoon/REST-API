@@ -1,6 +1,13 @@
 from peewee import *
 
-db = SqliteDatabase('db.sqlite3')
+# db = SqliteDatabase('db.sqlite3')
+db = PostgresqlDatabase(
+    database="API_REST",
+    user="postgres",
+    password="toto",
+    host="localhost",
+    port=5432
+)
 
 class BaseModel(Model):
     class Meta:
