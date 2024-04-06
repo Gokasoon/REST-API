@@ -7,14 +7,20 @@ import sys
 
 app = Flask(__name__)
 
+db_name = os.environ.get('DB_NAME')
+db_user = os.environ.get('DB_USER')
+db_password = os.environ.get('DB_PASSWORD')
+db_host = os.environ.get('DB_HOST')
+db_port = os.environ.get('DB_PORT')
+
 @app.cli.command()
 def init_db():
     db = PostgresqlDatabase(
-        database="API_REST",
-        user="postgres",
-        password="toto",
-        host="localhost",
-        port=5432
+        database=db_name,
+        user=db_user,
+        password=db_password,
+        host=db_host,
+        port=db_port
     )
 
     db.connect()
@@ -150,11 +156,11 @@ def put_order(order_id):
 if len(sys.argv) > 1 and sys.argv[1] != 'init-db':
 
     db = PostgresqlDatabase(
-        database="API_REST",
-        user="postgres",
-        password="toto",
-        host="localhost",
-        port=5432
+        database=db_name,
+        user=db_user,
+        password=db_password,
+        host=db_host,
+        port=db_port
     )
     db.connect()
 
@@ -168,4 +174,4 @@ if len(sys.argv) > 1 and sys.argv[1] != 'init-db':
                 product["description"] = product["description"].replace("\x00", "")
             Product.create(id=product['id'], name=product['name'], type=product['type'], description=product['description'], image=product['image'], price=product['price'], weight=product['weight'], height=product['height'], in_stock=product['in_stock'])
 
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)

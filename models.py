@@ -1,13 +1,20 @@
 from peewee import *
+import os
 
-# db = SqliteDatabase('db.sqlite3')
+
+db_name = os.environ.get('DB_NAME')
+db_user = os.environ.get('DB_USER')
+db_password = os.environ.get('DB_PASSWORD')
+db_host = os.environ.get('DB_HOST')
+db_port = os.environ.get('DB_PORT')
+
 db = PostgresqlDatabase(
-    database="API_REST",
-    user="postgres",
-    password="toto",
-    host="localhost",
-    port=5432
-)
+        database=db_name,
+        user=db_user,
+        password=db_password,
+        host=db_host,
+        port=db_port
+    )
 
 class BaseModel(Model):
     class Meta:
