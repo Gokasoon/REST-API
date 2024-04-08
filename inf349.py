@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, redirect, url_for
+from flask import Flask, jsonify, request, redirect, url_for, render_template
 from models import *
 import requests
 import os
@@ -34,6 +34,13 @@ def init_db():
 def get_products():
     products = Product.select().dicts()
     return jsonify({"products": list(products)})
+    
+
+@app.route('/web', methods=['GET'])
+def show_products():
+    products = get_products().json['products']
+    return render_template('products.html', products=products)
+   
 
 
 @app.route('/order', methods=['POST'])
