@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request, redirect, url_for, render_template
 from models import *
 import requests
+import redis
+import json
 import os
 import sys
 
@@ -12,6 +14,8 @@ db_user = os.environ.get('DB_USER')
 db_password = os.environ.get('DB_PASSWORD')
 db_host = os.environ.get('DB_HOST')
 db_port = os.environ.get('DB_PORT')
+redis_host = os.environ.get('REDIS_URL')
+r = redis.Redis(host=redis_host, port=6379, decode_responses=True)
 
 @app.cli.command()
 def init_db():
@@ -124,6 +128,8 @@ def post_order():
 
 @app.route('/order/<int:order_id>', methods=['GET'])
 def get_order(order_id):
+    if (r.get('order:' + str(order_id)) is not None):
+        return json.loads(r.get('order:' + str(order_id)))
     try:
         order = Order.get(id=order_id)
         return jsonify({"order" : order.to_dict()})
@@ -168,6 +174,8 @@ def put_order(order_id):
         order.transaction = Transaction.create(id=transaction['id'], amount_charged=amount_charged, success = transaction['success'])
         order.credit_card = CreditCard.create(number=card_data['number'], expiration_year=card_data['expiration_year'], expiration_month=card_data['expiration_month'], cvv=card_data['cvv'], name=card_data['name'])    
         order.save()
+
+        r.set('order:' + str(order.id), json.dumps({"order" : order.to_dict()}))
 
         return jsonify({"order" : order.to_dict()})
     

@@ -8,7 +8,7 @@ RUN pip install -r requirements.txt
 
 EXPOSE 5000
 
-ENV REDIS_URL=redis://host.docker.internal
+ENV REDIS_URL=host.docker.internal
 ENV DB_HOST=host.docker.internal
 ENV DB_USER=postgres
 ENV DB_PASSWORD=toto
