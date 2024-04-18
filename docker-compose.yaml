@@ -10,7 +10,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: toto
-      POSTGRES_DB: api8inf349
+      POSTGRES_DB: API_REST
 
   redis:  
     image: redis:5
