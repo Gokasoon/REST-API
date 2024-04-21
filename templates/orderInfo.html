@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Info Commande{% endblock %}
+{% block content %}
+    <h1>Informations Commande</h1>
+    <div>
+        <h2>Details de la commande</h2>
+        <p><strong>Id Commande:</strong> {{ order.id }}</p>
+        <p><strong>Prix total:</strong> {{ order.total_price }}€</p>
+        <p><strong>Prix de transport:</strong> {{ order.shipping_price }}</p>
+        <p><strong>Payée:</strong> {% if order.paid %} Oui {% else %} Non {% endif %}</p>
+    </div>
+    <div>
+        <h2>Produits de la commande</h2>
+        <ul>
+            {% for item in order.products %}
+                <strong>Nom du produit:</strong> {{ item.name }}<br>
+                <strong>Quantité:</strong> {{ item.quantity }}<br>
+                <strong>Prix unitaire:</strong> {{ item.price }}€ <br>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

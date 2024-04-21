@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Verifier Info Commande{% endblock %}
+{% block content %}
+    <h1>Verifier les informations de sa commande</h1>
+    <form id="orderForm" action="/web/order/" method="GET">
+        <label for="orderId">Entre l'identifiant de ta commande:</label>
+        <input type="text" id="orderId" name="orderId" required>
+        <button type="submit">Rechercher</button>
+    </form>
+
+    <script>
+        document.getElementById("orderForm").addEventListener("submit", function(event) {
+            event.preventDefault(); 
+            var orderId = document.getElementById("orderId").value;
+            var url = "http://127.0.0.1:5000/web/order/" + orderId;
+            window.location.href = url;
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+</head>
+<body>
+    <h1>Bar de navigation</h1>
+    <ul>
+        <li><a href="/web/checkOrder">Verifier informations d'une commande</a></li>
+        <li><a href="/web/order">Creer une commande</a></li>
+        <li><a href="/web">Voir les produits</a></li>
+    </ul>
+    {% block content %}
+    {% endblock %}
+</body>
+</html>

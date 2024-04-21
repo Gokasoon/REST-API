@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Formulaire Commande{% endblock %}
+{% block content %}
+    <h1>Formulaire Commande</h1>
+    <form id="orderForm" action="/order" method="POST">
+        <label for="productId">Identifiant du produit 1:</label>
+        <input type="text" id="productId" name="productId" required>
+        <label for="quantity">Quantité:</label>
+        <input type="text" id="quantity" name="quantity" required >
+        <br>
+        <label for="productId2">Identifiant du produit 2:</label>
+        <input type="text" id="productId2" name="productId2" required>
+        <label for="quantity2">Quantité:</label>
+        <input type="text" id="quantity2" name="quantity2" required>
+        
+        <button type="submit">Commander</button>
+    </form>
+{% endblock %}

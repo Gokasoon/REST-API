@@ -1,13 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Les produits</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Produits{% endblock %}
+{% block content %}
     <h1>Les produits</h1>
     <ul>
         {% for product in products %}
             <li>{{ product.name }} - {{ product.price }}€</li>
         {% endfor %}
-</body>
-</html>
+    </ul>
+{% endblock %}

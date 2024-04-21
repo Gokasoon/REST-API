@@ -44,28 +44,64 @@ def get_products():
 def show_products():
     products = get_products().json['products']
     return render_template('products.html', products=products)
-   
+
+@app.route('/web/order', methods=['GET'])
+def show_order_form():
+    return render_template('orderForm.html')
 
 
 @app.route('/order', methods=['POST'])
 def post_order():
-    data = request.get_json()
+    try :
+        data = request.get_json()
 
-    total_price = 0
-    total_weight = 0
+        total_price = 0
+        total_weight = 0
 
-    if 'products' not in data and 'product' not in data:
-        return jsonify({'errors': {'products': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
+        if 'products' not in data and 'product' not in data:
+            return jsonify({'errors': {'products': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
 
-    if 'products' in data:
-        product_data = data['products']
-        order_items  = []
+        if 'products' in data:
+            product_data = data['products']
+            order_items  = []
 
-        for product_data in product_data:
-        
-            if 'id' not in product_data or 'quantity' not in product_data:
-                return jsonify({'errors': {'products': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
+            for product_data in product_data:
+            
+                if 'id' not in product_data or 'quantity' not in product_data:
+                    return jsonify({'errors': {'products': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
 
+                product_id = product_data['id']
+                quantity = product_data['quantity']
+
+                if quantity < 1:
+                    return jsonify({'errors': {'products': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
+
+                product = Product.get_or_none(id=product_id)
+
+                if product is None or not product.in_stock:
+                    return jsonify({'errors': {'products': {'code': 'out-of-inventory', 'name': 'Le produit demandé n\'est pas en inventaire'}}}), 422
+
+                total_price += product.price * quantity
+                total_weight += product.weight * quantity
+
+                order_item = OrderItem.create(product=product, quantity=quantity) 
+                order_items.append(order_item)
+
+            if total_weight < 0.5 :
+                shipping_price = 5
+            elif total_weight < 2 :
+                shipping_price = 10
+            else :
+                shipping_price = 25
+            
+            for order_item in order_items:
+                order_item.save()
+
+            order = Order.create(total_price=total_price, shipping_price=shipping_price, paid=False, email=None, credit_card=None, shipping_information=None)
+            order.order_items.add(order_items)
+            
+        elif 'product' in data:
+            product_data = data['product']
             product_id = product_data['id']
             quantity = product_data['quantity']
 
@@ -80,37 +116,36 @@ def post_order():
             total_price += product.price * quantity
             total_weight += product.weight * quantity
 
-            order_item = OrderItem.create(product=product, quantity=quantity) 
-            order_items.append(order_item)
+            if total_weight < 0.5 :
+                shipping_price = 5
+            elif total_weight < 2 :
+                shipping_price = 10
+            else :
+                shipping_price = 25
 
-        if total_weight < 0.5 :
-            shipping_price = 5
-        elif total_weight < 2 :
-            shipping_price = 10
-        else :
-            shipping_price = 25
-        
-        for order_item in order_items:
-            order_item.save()
+            order_item = OrderItem.create(product=product, quantity=quantity)
+            order = Order.create(total_price=total_price, shipping_price=shipping_price, paid=False, email=None, credit_card=None, shipping_information=None)
+            order.order_items.add(order_item) 
+            
+        return redirect(url_for('get_order', order_id=order.id), code=302)
+    
+    except Exception :
+        product_id1 = request.form.get('productId')
+        quantity1 = int(request.form.get('quantity', 0))
+        product_id2 = request.form.get('productId2')
+        quantity2 = int(request.form.get('quantity2', 0))
 
-        order = Order.create(total_price=total_price, shipping_price=shipping_price, paid=False, email=None, credit_card=None, shipping_information=None)
-        order.order_items.add(order_items)
-        
-    elif 'product' in data:
-        product_data = data['product']
-        product_id = product_data['id']
-        quantity = product_data['quantity']
-
-        if quantity < 1:
+        if quantity1 < 1 and quantity2 < 1:
             return jsonify({'errors': {'products': {'code': 'missing-fields', 'name': 'La création d\'une commande nécessite un produit'}}}), 422
+        
+        product1 = Product.get_or_none(id=product_id1)
+        product2 = Product.get_or_none(id=product_id2)
 
-        product = Product.get_or_none(id=product_id)
-
-        if product is None or not product.in_stock:
+        if product1 is None or not product1.in_stock or product2 is None or not product2.in_stock:
             return jsonify({'errors': {'products': {'code': 'out-of-inventory', 'name': 'Le produit demandé n\'est pas en inventaire'}}}), 422
-
-        total_price += product.price * quantity
-        total_weight += product.weight * quantity
+        
+        total_price = product1.price * quantity1 + product2.price * quantity2
+        total_weight = product1.weight * quantity1 + product2.weight * quantity2
 
         if total_weight < 0.5 :
             shipping_price = 5
@@ -119,12 +154,21 @@ def post_order():
         else :
             shipping_price = 25
 
-        order_item = OrderItem.create(product=product, quantity=quantity)
+        order_item1 = OrderItem.create(product=product1, quantity=quantity1)
+        order_item2 = OrderItem.create(product=product2, quantity=quantity2)
         order = Order.create(total_price=total_price, shipping_price=shipping_price, paid=False, email=None, credit_card=None, shipping_information=None)
-        order.order_items.add(order_item) 
-        
-    return redirect(url_for('get_order', order_id=order.id), code=302)
+        order.order_items.add([order_item1, order_item2])
 
+        order_data = order.to_dict()
+
+        for item in order_data['products']:
+            product = Product.get_or_none(id=item['product'])
+            if product:
+                item['name'] = product.name
+                item['price'] = product.price
+
+        return render_template('orderInfo.html', order=order_data)
+    
 
 @app.route('/order/<int:order_id>', methods=['GET'])
 def get_order(order_id):
@@ -132,10 +176,30 @@ def get_order(order_id):
         return json.loads(r.get('order:' + str(order_id)))
     try:
         order = Order.get(id=order_id)
-        return jsonify({"order" : order.to_dict()})
+        return {"order": order.to_dict()}
     
     except Order.DoesNotExist or order_id is None:
         return jsonify({'errors': {'order': {'code': 'not-found', 'name': 'La commande demandée n\'existe pas'}}}), 404
+    
+        
+@app.route('/web/order/<int:order_id>', methods=['GET'])
+def show_order(order_id):
+    order_data = get_order(order_id)
+    order_data = order_data['order']
+    if order_data:
+        for item in order_data['products']:
+            product = Product.get_or_none(id=item['product'])
+            if product:
+                item['name'] = product.name
+                item['price'] = product.price
+        return render_template('orderInfo.html', order=order_data)
+    else:
+        return jsonify({'error': 'Order not found'}), 404
+    
+
+@app.route('/web/checkOrder', methods=['GET'])
+def show_check_order_form():
+    return render_template('checkOrder.html')
 
     
 @app.route('/order/<int:order_id>', methods=['PUT'])
