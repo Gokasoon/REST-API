@@ -17,22 +17,6 @@ db_port = os.environ.get('DB_PORT')
 redis_host = os.environ.get('REDIS_URL')
 r = redis.Redis(host=redis_host, port=6379, decode_responses=True)
 
-@app.cli.command()
-def init_db():
-    db = PostgresqlDatabase(
-        database=db_name,
-        user=db_user,
-        password=db_password,
-        host=db_host,
-        port=db_port
-    )
-
-    db.connect()
-    db.create_tables([Product, OrderItem, CreditCard, ShippingInformation, Order, Transaction], safe=True)
-    OrderOrderItemThrough = OrderItem.orders.get_through_model()
-    OrderOrderItemThrough.create_table()
-    db.close()
-    
 
 @app.route('/', methods=['GET'])
 def get_products():
@@ -260,7 +244,7 @@ def put_order(order_id):
     return jsonify({"order" : order.to_dict()})
 
 
-if len(sys.argv) > 1 and sys.argv[1] != 'init-db':
+if __name__ == '__main__':
 
     db = PostgresqlDatabase(
         database=db_name,
@@ -269,7 +253,11 @@ if len(sys.argv) > 1 and sys.argv[1] != 'init-db':
         host=db_host,
         port=db_port
     )
+
     db.connect()
+    db.create_tables([Product, OrderItem, CreditCard, ShippingInformation, Order, Transaction], safe=True)
+    OrderOrderItemThrough = OrderItem.orders.get_through_model()
+    OrderOrderItemThrough.create_table(safe=True)
 
     response = requests.get('http://dimprojetu.uqac.ca/~jgnault/shops/products/')
     products = response.json()
