@@ -1,5 +1,5 @@
 # REST-API
-Application Web responsable du paiement de commandes Internet
+REST-API responsable de paiement de commandes Internet
 
 Pour lancer l'app : docker run -p 5000:5000 {nomConteneur}
 
