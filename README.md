@@ -1,5 +1,5 @@
 # REST-API
-REST-API responsable de paiement de commandes Internet
+REST-API responsable de paiement de commandes Internet utilisant Flask, postgreSQL et Redis. 
 
 Pour lancer l'app : docker run -p 5000:5000 {nomConteneur}
 
